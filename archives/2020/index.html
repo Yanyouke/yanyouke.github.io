@@ -21,11 +21,12 @@
     
     <meta name="description" content="">
     <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://y-y-k.tk/archives/2020/index.html">
-<meta property="og:site_name" content="Hexo">
+<meta property="og:title" content="YYK&#39;s blog">
+<meta property="og:url" content="http://y-y-k.tk/archives/2020/">
+<meta property="og:site_name" content="YYK&#39;s blog">
 <meta property="og:locale" content="en_US">
 <meta property="article:author" content="YYK">
+<meta property="article:tag" content="YYK&#39;s blog">
 <meta name="twitter:card" content="summary">
     <meta http-equiv="Cache-control" content="no-cache">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
@@ -356,6 +357,184 @@
     
     
     <article class="index-post">
+        <a class="abstract-title" href = "/2020/03/15/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/" >
+            
+                <span>命令执行</span>
+        </a>
+        <div class="abstract-content">
+            原因没有对代码中可执行的特殊函数入口做过滤，导致用户可以提交恶意语句，并由服务端进行执行。例如system()，eval()，exec()等函数。
+函数eval()assert()call_user_func()is_callable()
+call_user_func_array()后面注意是数组
+create_function()匿名函数
+preg_replace()/e修正符
+array_map()usort()uasort()${php代码}（eg:phpinfo()）system()系统命令
+exec()passthru()shell_exec()``与shell_esec功能相...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2020/03/15</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "命令执行">命令执行</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
+        <a class="abstract-title" href = "/2020/03/15/%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB/" >
+            
+                <span>文件包含</span>
+        </a>
+        <div class="abstract-content">
+            文件包含漏洞分类本地文件包含（LFI）原因服务器执行PHP文件时，可以通过文件包含函数加载另一个文件中的PHP代码，并且当PHP来执行。类似于java里的继承，语言里的调用，并且对于传参过滤不严，例如以下代码。
+1234&lt;?php    $filename  &#x3D; $_GET[&#39;filename&#39;];    include($filename);?&gt;
+其中，$_GET[‘filename’]没有严格过滤参数，导致可以构造恶意参数，达到攻击目的
+相关函数（php）include()include_once()require()require_once()...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2020/03/15</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "文件包含">文件包含</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
+        <a class="abstract-title" href = "/2020/03/15/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/" >
+            
+                <span>文件上传</span>
+        </a>
+        <div class="abstract-content">
+            文件上传漏洞分类：1.JS检测绕过攻击1）通过浏览器插件，删除检测js代码2）上传后抓包，修改为php等可用后缀
+2.文件后缀绕过分析攻击（iis，apache等）1）apache可解析以.php,.phtml为后缀的文件；在Apache1.x与Apache2.x中存在解析漏洞，不管文件的后缀是什么，只要是.php.结尾，就会被Apache服务器解析成PHP文件，问题是Apache如果在mime.types文件里面没有定义的扩展名比如x1.x2.x3的情况下，最后一个x3的没有定义，那么就会将其解析成倒数第二个的x2的定义的扩展名类型。2）apache的解析顺序问题，其从右到左进行解析，...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2020/03/15</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "文件上传">文件上传</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
+        <a class="abstract-title" href = "/2020/03/15/SQL%E6%B3%A8%E5%85%A5%EF%BC%88%E4%BA%8C%EF%BC%89/" >
+            
+                <span>SQL注入（二）</span>
+        </a>
+        <div class="abstract-content">
+            SQL注入两大类：
+字符型注入例如：http://XXX.com/sql/id=ok ,这里页面显示’ok’时，即为字符型型注入
+数字型注入：例如：http://XXX.com/sql/id=1 , 这里的id不需要闭合引号简单来说，在于有无引号的区别，字符型可以是字符和数字，但是数字型只能是数字宽字节注入宽字节注入是一个针对GBK的注入以下是addslashes()函数，此函数为常见防SQL注入的函数那么绕过的方法有两种：
+例如我们需要 ‘ 进行报错，那么我们前面再次加上\，得出\‘，使其转义,’生效
+&#39;的url编码为%5c%27，如果我们加上%df，得出%df%5c%27，变...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2020/03/15</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "SQL注入">SQL注入</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
+        <a class="abstract-title" href = "/2020/03/15/SQL%E6%B3%A8%E5%85%A5/" >
+            
+                <span>SQL注入（一）</span>
+        </a>
+        <div class="abstract-content">
+            以下为此漏洞的初级知识分类在这里，你将学到初级的SQL注入漏洞，如有想深入学习，请继续关注此博客，谢谢。
+数据库的基本概念数据库大致可以分为四点：
+
+数据(Data)：在计算机中，各种我们所看到的字母，文字，字符串，语音，图片视频等统称为数据。
+
+数据库(DB)【Access、MYSQL、Oracle、MSSQL等】是按照数据结构来组织、存储和管理数据的“仓库”
+
+数据库管理系统(DBMS）【Access、MYSQL、Oracle、MSSQL等】是一种操纵和管理数据库的软件，用于建立、使用和维护数据库。它对数据库进行统一的管理和控制,以保证数据库的安全性和完整性。
+
+结构化查询语言（SQ...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2020/03/15</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "SQL注入">SQL注入</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
         <a class="abstract-title" href = "/2020/03/14/xml%E6%B3%A8%E5%85%A5/" >
             
                 <span>xml注入</span>
@@ -377,9 +556,9 @@ DTD(文档类型定义)定义：其可定义XML文档的合法构建模块，可
             
             <div class= abstract-tags >
     
-        <a class="post-tag" href="javascript:void(0);" data-tags = "web">web</a>
-    
         <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "xml">xml</a>
     
 </div>
             
@@ -491,9 +670,48 @@ DTD(文档类型定义)定义：其可定义XML文档的合法构建模块，可
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 1
+        Total : 6
         </div>
         <!-- search  -->
         
@@ -512,14 +730,83 @@ DTD(文档类型定义)定义：其可定义XML文档的合法构建模块，可
             <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/14/xml%E6%B3%A8%E5%85%A5/" >xml注入</a>
         </li>
     
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/15/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/" >文件上传</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/SQL%E6%B3%A8%E5%85%A5%EF%BC%88%E4%BA%8C%EF%BC%89/" >SQL注入（二）</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB/" >文件包含</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/15/SQL%E6%B3%A8%E5%85%A5/" >SQL注入（一）</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/" >命令执行</a>
+        </li>
+    
     </div>
   </div>
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
     
-        <span class="sidebar-tag-name" data-tags="web"><span class="iconfont-archer">&#xe606;</span>web</span>
-    
         <span class="sidebar-tag-name" data-tags="web漏洞总结"><span class="iconfont-archer">&#xe606;</span>web漏洞总结</span>
+    
+        <span class="sidebar-tag-name" data-tags="xml"><span class="iconfont-archer">&#xe606;</span>xml</span>
+    
+        <span class="sidebar-tag-name" data-tags="SQL注入"><span class="iconfont-archer">&#xe606;</span>SQL注入</span>
+    
+        <span class="sidebar-tag-name" data-tags="命令执行"><span class="iconfont-archer">&#xe606;</span>命令执行</span>
+    
+        <span class="sidebar-tag-name" data-tags="文件包含"><span class="iconfont-archer">&#xe606;</span>文件包含</span>
+    
+        <span class="sidebar-tag-name" data-tags="文件上传"><span class="iconfont-archer">&#xe606;</span>文件上传</span>
     
     </div>
     <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>

