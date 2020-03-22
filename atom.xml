@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://y-y-k.tk/"/>
-  <updated>2020-03-15T03:05:28.815Z</updated>
+  <updated>2020-03-22T03:19:34.045Z</updated>
   <id>http://y-y-k.tk/</id>
   
   <author>
@@ -15,6 +15,34 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Micropoor前辈之渗透笔记（1）</title>
+    <link href="http://y-y-k.tk/2020/03/22/%E8%B7%9F%E9%9A%8Fmicropoor%E5%89%8D%E8%BE%88%E4%B9%8B%E6%B8%97%E9%80%8F%E7%AC%94%E8%AE%B0%EF%BC%882%EF%BC%89/"/>
+    <id>http://y-y-k.tk/2020/03/22/%E8%B7%9F%E9%9A%8Fmicropoor%E5%89%8D%E8%BE%88%E4%B9%8B%E6%B8%97%E9%80%8F%E7%AC%94%E8%AE%B0%EF%BC%882%EF%BC%89/</id>
+    <published>2020-03-22T03:16:25.851Z</published>
+    <updated>2020-03-22T03:19:34.045Z</updated>
+    
+    <content type="html"><![CDATA[<p><strong>此笔记的原书来源于<a href="https://github.com/Micropoor/Micro8.git" target="_blank" rel="noopener">Micropoor前辈的Micro8</a>，这里我仅对我感兴趣的地方做些自己的学习笔记，开头会注明来自哪几节课。</strong><br>以下来自第6节课<br>由于师傅写的已经很清楚了，这里只做思路和其他介绍</p><h1 id="反攻溯源情况介绍"><a href="#反攻溯源情况介绍" class="headerlink" title="反攻溯源情况介绍"></a>反攻溯源情况介绍</h1><p><strong>事件过程</strong>：某厂商日志分析发现IP，但是日志记录的其中行为直接大量登陆内网，并无攻击 过程，以及攻击手法，导致内网安全加固不知从何下手，并且不知道有什么后门需要清除， 而且日志里攻击者IP为外国IP，不确定真实IP，还是代理IP。无法定位真正攻击者的地理位 置。<br><strong>思路</strong>：反入侵得到攻击者机器权限，入侵现场还原，摸清入侵思路。并且须知入侵者的 相关后门遗留，以便处理后门。抓取入侵者的真实IP获得地理位置。并按照攻击者的攻击路 线加固相关漏洞安全。</p><h1 id="学习补强"><a href="#学习补强" class="headerlink" title="学习补强"></a>学习补强</h1><p><strong>1. <strong>tns日志</strong></strong><br>TNS协议是ORACLE服务端和客户端通讯的协议。TNS协议传输可以使用TCP/IP协议、使用SSL的TCP/IP协议、命名管道和IPC协议传输，其中TCP/IP协议传输是使用明文传送。<br><strong>2. 通过DHCP记录查看应用发现存在loadfile漏洞</strong><br>说实话，这里没有明白，希望懂的大佬能指点一下<br><strong>3. shift后门</strong><br>放一个写的比较有意思的<a href="https://blog.csdn.net/yakson/article/details/9698275" target="_blank" rel="noopener">链接</a></p><h1 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h1><ol><li>查看厂商日志和tns日志进行分析===》通过Oracle相关存储得到hacker的存储利用文件和源IP，此处得到两个IP和一个样本文件<br><img src="https://img-blog.csdnimg.cn/2020032209445029.png" alt="在这里插入图片描述">)<img src="https://img-blog.csdnimg.cn/20200322094533859.png" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20200322094555699.png" alt="在这里插入图片描述"></li><li>刺探以上两个IP的服务器等信息，根据情况改变思路，例如尝试拿到服务器权限，查看日志，ip和对应时间，并记住尽量不留痕迹</li><li>通过DHCP记录查看应用发现存在文件包含漏洞和shift漏洞，16进制读取分析后连接。<br><img src="https://img-blog.csdnimg.cn/20200322094738597.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li><li>逆向分析得到的两个样本文件，侧重点为shift后门</li><li>连接shift后门后，弹出cmd命令和system权限<br><img src="https://img-blog.csdnimg.cn/20200322094831229.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQwNTY4Nzcw,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li><li>找服务器日志进行关于攻击者ip，对应时间和其他文件的取证</li><li>根据以上样本分析及服务器的文件，进行厂商网站等加固</li></ol>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;&lt;strong&gt;此笔记的原书来源于&lt;a href=&quot;https://github.com/Micropoor/Micro8.git&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Micropoor前辈的Micro8&lt;/a&gt;，这里我仅对我感兴趣的地方做些自己
+      
+    
+    </summary>
+    
+    
+      <category term="渗透测试" scheme="http://y-y-k.tk/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"/>
+    
+    
+      <category term="反攻溯源" scheme="http://y-y-k.tk/tags/%E5%8F%8D%E6%94%BB%E6%BA%AF%E6%BA%90/"/>
+    
+      <category term="渗透测试" scheme="http://y-y-k.tk/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"/>
+    
+  </entry>
   
   <entry>
     <title>命令执行</title>
